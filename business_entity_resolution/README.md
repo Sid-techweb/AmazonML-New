@@ -90,3 +90,30 @@ sha256). Re-running a stage skips completed work; an interrupted stage resumes f
 | `v2/predict_v2.py` | submission bundle from one run: matches ⊆ candidates, one S1 per record, all S1 rows |
 | `v2/run_v2.py` | orchestrates the v2 stages |
 | `train.py`, `predict.py`, `metrics.py`, `run_all.py` | v1 pipeline (kept for reference; `predict.write_grouped` is reused) |
+
+## v4: France handling (current recommendation)
+
+France appears only in test. Two France-only steps run on top of the v2 pipeline (US/India outputs are unchanged):
+
+```bash
+cd src/v4
+python v4_prepare.py                         # v4test split: French-locale re-normalisation of France records
+cd ..                                        # re-retrieve / re-featurise France (US/India reused), score C3/C4
+python -c "import candidates; candidates.generate('v4test')"
+python -c "import build_features; build_features.build('v4test')"
+cd v2 && python featx.py v4test && python train_v2.py C3_direct_x_more_data v4test && python stack_v2.py C3_direct_x_more_data v4test
+cd ../v4
+python fr_pseudo.py fr1 0.98 0.02 0.2 0.10    # self-training model for France (pseudo-labels from confident C3 predictions)
+python assemble.py c4fr_frp_t90 frp_fr1 0.9 c4   # -> output/v4_c4fr_frp_t90/ (validated)
+```
+
+| file | role |
+|---|---|
+| `v4/fr_locale.py` | French-locale normaliser (region/department codes, bis/ter, cours, legal forms) |
+| `v4/v4_prepare.py` | builds the `v4test` split (France re-normalised; US/India hard-linked) |
+| `v4/fr_pseudo.py` | one-round self-training for France (US+India labelled rows + France pseudo-labels) |
+| `v4/assemble.py` | final file: C4 for US/India, chosen France source/threshold; validator + subset checks |
+| `v4/tx.py`, `v4/tx_pseudo.py`, `v4/tx_errors.py` | cross-country transfer proxy (train one country, evaluate the other) |
+| `v4/diag_shift.py`, `v4/mine_noise_tokens.py`, `v4/compare_fr.py` | label-free test diagnostics |
+
+Build the zip: `python make_submission_v4.py <team> v4_c4fr_frp_t90` (from the repo root).

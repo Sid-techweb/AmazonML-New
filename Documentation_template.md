@@ -100,3 +100,16 @@ DEV threshold sweep for the final model: F0.5 = 0.98312 / 0.98322 / 0.98321 / 0.
 ---
 
 **Note:** Teams can modify sections according to their approach while maintaining clarity and technical depth.
+
+
+---
+
+## Addendum: France (unseen country) handling — v4
+
+**Why:** local validation 0.983 but leaderboard 0.970. US/India test behave like DEV, while France (15% of test, no training data) has twice the uncertain band. A labelled proxy (train on one country, test on the other) shows a 0.04–0.05 loss on an unseen country.
+
+**French-locale normalisation (France records only):** noise vocabulary was mined without labels from high-confidence test matches. Region and department names in whole address components map to one region code (the S1 side carries the region, S2/S3 records often the department; the analogue of US state name vs code). Also handled: `bis/ter`, `crs` = cours, rond-point, and the legal forms `cie`/`compagnie`/`ei`. France is re-retrieved and re-scored; US/India are untouched.
+
+**One-round self-training for France:** the matcher is refit on labelled US+India rows plus France pseudo-labels (records whose top candidate probability is ≥ 0.98 → match / ≤ 0.02 → non-match). It is validated on the transfer proxy in both directions: US→India best 0.9344 vs 0.9295; India→US 0.9453 vs 0.9455 (neutral). A second round was worse and is not used. France threshold 0.9: an unseen country prefers a higher threshold in every proxy setting.
+
+**Result files:** US/India identical to the scored 0.970441 submission; only France changes. No France labels exist, so the France effect is measured only by the leaderboard.

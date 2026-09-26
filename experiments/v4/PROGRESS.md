@@ -32,3 +32,4 @@ no sibling/population features; select only on DEV / proxy-transfer tests; never
   Fair comparison (one common threshold per method, averaged over both directions): base best avg 0.93714 (t .8); self-trained best avg 0.93983 (t .9) -> +0.0027,
   and self-trained@.9 is within 0.0002 of base's best in the unfavourable direction. => France self-trained variant uses t=0.9.
 - [04:25] Final: recommended output/v4_c4fr_frp_t90 (C4 US/India identical to LB 0.970441 file; France FR-locale + self-trained, t .9); conservative alt output/v4_c4fr_t80. REPORT.md written.
+- [04:40] Packaged: business_entity_resolution/src/v4/ (v4 scripts, path-fixed), README v4 section, Documentation addendum, make_submission_v4.py; built team_submission_v4_c4fr_frp_t90.zip (588 MB, 44 files, testzip OK; not committed).

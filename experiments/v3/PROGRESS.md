@@ -67,3 +67,16 @@ The current submission and candidate file are preserved.
 Commands run from repository root with `.venv/Scripts/python.exe -u -X utf8`.
 Heavy stages run one at a time. See PLAN.md for selection gates. No leaderboard
 improvement can be claimed until a candidate is actually scored on the portal.
+
+## Continuation after handoff (Claude, 26 Sep 2026 evening)
+- Pre-flight: no Python processes; `role_gate_v2test` manifest complete (219/219, 3,387,279 rows); output/ = C4 (sha 5a7f2c06…).
+- Test scoring: `train.py roles --score v2test` completed on the first attempt (bounded 4-attempt retry wrapper, resumable
+  checkpoints): **9,969,589 rows** → `cache/runs/v3/roles/pred_v2test.parquet`. Peak RSS ~0.6 GiB. Log: `score_test.log`.
+- Export: the first 3 attempts failed identically inside the validator call. The official validator prints non-ASCII (em dash)
+  in the Windows code page, and `export.py` decoded it as UTF-8, so stdout was None and writing validation.log crashed.
+  Fix (no model/feature change): run the validator with `PYTHONIOENCODING=utf-8`, `errors="replace"`. Re-run passed.
+- `output/v3_roles/`: `matching_results.tsv` sha256 fa607c39297b7d9000bf1145a1a2213a0863f99e55d15792c5328c7731ac487f,
+  1,732,544 S1 rows (1,631,363 non-empty), **5,718,652 matched records (57.4% of test records; C4 57.8%)**,
+  official matching validator PASS, streamed candidate-subset PASS, candidate_pairs.tsv hard link sha 168dd4fd… (unchanged).
+- Baseline preserved: output/matching_results.tsv sha 5a7f2c06… (C4), team_submission.zip untouched.
+- Not done: v3 competition ZIP (v3 depends on C3/C4 caches; not yet self-contained). Leaderboard score of v3: **not measured**.

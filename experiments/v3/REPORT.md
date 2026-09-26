@@ -114,3 +114,12 @@ Model, frozen choice, exact JSON metrics, and source snapshot:
 `team_submission.zip` remain the known C4 submission. The intended new artifact
 directory is `output/v3_roles/`; its bundle and validation log will record the
 final export checks.
+
+
+## Test export (completed after handoff)
+* Test scoring: 9,969,589 records with the frozen model (roles, threshold 0.80, baseline_weight 0).
+* `output/v3_roles/matching_results.tsv`: sha256 `fa607c39297b7d9000bf1145a1a2213a0863f99e55d15792c5328c7731ac487f`,
+  1,732,544 S1 rows, 1,631,363 with matches, **5,718,652 matched records (57.4%; C4 57.8%)**.
+* Official matching validator PASS; streamed candidate-subset check PASS; `candidate_pairs.tsv` = unchanged original (sha `168dd4fd…`).
+* Exporter fix: validator subprocess output is now read as UTF-8 (Windows code-page decode crash). Model and feature behaviour are unchanged.
+* **Leaderboard: not yet scored.** The C4 file (0.970441 on the leaderboard) remains `output/matching_results.tsv`.

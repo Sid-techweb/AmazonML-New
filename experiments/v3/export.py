@@ -92,7 +92,8 @@ def export(mode):
     result = subprocess.run([sys.executable, str(ROOT / "utils/validate_submission.py"),
                              "--matching", str(target), "--candidate", str(skipped_candidate),
                              "--test-dir", str(ROOT / "dataset/test")],
-                            text=True, capture_output=True, encoding="utf-8")
+                            text=True, capture_output=True, encoding="utf-8", errors="replace",
+                            env={**os.environ, "PYTHONIOENCODING": "utf-8"})  # validator prints non-ASCII (Windows cp1252 otherwise)
     (dest / "validation.log").write_text(result.stdout + result.stderr, encoding="utf-8")
     if result.returncode:
         raise RuntimeError("Official matching-file validation failed; see validation.log")

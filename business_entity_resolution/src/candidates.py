@@ -109,7 +109,9 @@ def patch_queries(split: str, flag: str = "has_indic"):
         new = pl.concat(parts)
         patched = qc.select(pl.col("q_idx").cast(pl.UInt32))
         for f in sorted(out_dir.glob(f"{country}_*.parquet")):
-            old = pl.read_parquet(f)
+            if f.name == f"{country}_patch_{flag}.parquet":
+                continue  # previous patch output is replaced below
+            old = pl.read_parquet(f, memory_map=False)  # no mmap: file may be rewritten in place (Windows)
             keep = old.join(patched, on="q_idx", how="anti")
             if keep.height != old.height:
                 keep.write_parquet(f)

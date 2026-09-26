@@ -45,21 +45,34 @@ top = pl.read_parquet(RUNS / src / "top1.parquet").rename({"s1_idx": "top_s1", "
 if not run.done("fit"):
     keep_us = (pl.col("fold") == "TRAIN") & ((pl.col("q_idx").hash(SEED) % 1000) < 150)
     es = (pl.col("fold") == "TRAIN") & ~keep_us & ((pl.col("q_idx").hash(SEED + 1) % 1000) < 15)
-    Xa, ya, Xe, ye = [], [], [], []
-    for d in batches("US"):  # labelled source rows, exactly as the source model
-        d = d.join(qf, on="q_idx", how="left").with_columns((pl.col("s1_idx") == pl.col("true_s1")).fill_null(False).alias("y"))
-        a, b = d.filter(keep_us), d.filter(es)
-        Xa.append(a.select(FEATS).to_numpy().astype(np.float32)); ya.append(a["y"].to_numpy().astype(np.float32))
-        Xe.append(b.select(FEATS).to_numpy().astype(np.float32)); ye.append(b["y"].to_numpy().astype(np.float32))
-    n_pseudo = [0, 0]
     pick = (pl.col("fold") != "DEV") & ((pl.col("q_idx").hash(SEED + 3) % 1000) < int(PFRAC * 1000))
-    for d in batches("India"):  # pseudo-labelled target rows; true labels are NOT read here
-        d = d.join(qf.select("q_idx", "fold"), on="q_idx", how="left").filter(pick).join(top, on="q_idx", how="inner")
-        d = d.filter((pl.col("top_p") >= HI) | (pl.col("top_p") <= LO)).with_columns(
-            ((pl.col("top_p") >= HI) & (pl.col("s1_idx") == pl.col("top_s1"))).alias("y"))
-        Xa.append(d.select(FEATS).to_numpy().astype(np.float32)); ya.append(d["y"].to_numpy().astype(np.float32))
+
+    def us_frames():
+        for d in batches("US"):  # labelled source rows, exactly as the source model
+            d = d.join(qf, on="q_idx", how="left").with_columns((pl.col("s1_idx") == pl.col("true_s1")).fill_null(False).alias("y"))
+            yield d.filter(keep_us), d.filter(es)
+
+    def in_frames():
+        for d in batches("India"):  # pseudo-labelled target rows; true labels are NOT read here
+            d = d.join(qf.select("q_idx", "fold"), on="q_idx", how="left").filter(pick).join(top, on="q_idx", how="inner")
+            yield d.filter((pl.col("top_p") >= HI) | (pl.col("top_p") <= LO)).with_columns(
+                ((pl.col("top_p") >= HI) & (pl.col("s1_idx") == pl.col("top_s1"))).alias("y"))
+
+    n_tr = n_es = n_ps = 0
+    for a_, b_ in us_frames():
+        n_tr += a_.height; n_es += b_.height
+    for d in in_frames():
+        n_ps += d.height
+    Xa = np.empty((n_tr + n_ps, len(FEATS)), np.float32); ya = np.empty(n_tr + n_ps, np.float32)
+    Xe = np.empty((n_es, len(FEATS)), np.float32); ye = np.empty(n_es, np.float32)
+    ia = ie = 0
+    for a_, b_ in us_frames():
+        Xa[ia:ia + a_.height] = a_.select(FEATS).to_numpy(); ya[ia:ia + a_.height] = a_["y"].to_numpy(); ia += a_.height
+        Xe[ie:ie + b_.height] = b_.select(FEATS).to_numpy(); ye[ie:ie + b_.height] = b_["y"].to_numpy(); ie += b_.height
+    n_pseudo = [0, 0]
+    for d in in_frames():
+        Xa[ia:ia + d.height] = d.select(FEATS).to_numpy(); ya[ia:ia + d.height] = d["y"].to_numpy(); ia += d.height
         n_pseudo[0] += d.height; n_pseudo[1] += int(d["y"].sum())
-    Xa, ya, Xe, ye = map(np.concatenate, (Xa, ya, Xe, ye))
     print(f"fit rows {len(ya):,} (pseudo {n_pseudo[0]:,}, pseudo positives {n_pseudo[1]:,})", mem(), flush=True)
     params = dict(objective="binary", learning_rate=0.05, num_leaves=255, min_data_in_leaf=200, feature_fraction=0.8,
                   bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0, max_bin=255, num_threads=12, seed=SEED, verbose=-1)

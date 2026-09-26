@@ -20,3 +20,10 @@ no sibling/population features; select only on DEV / proxy-transfer tests; never
 - [02:40] v3+FR: frozen v3 role model on v4test via v3fr.py (no v3 script edited; module loaded by path after a name-shadowing fix). output/v3_roles_fr/ matching sha 0e9951d5..., 5,727,529 matches, validator PASS, streamed subset PASS.
 - [02:43] Identity check: US/India rows 100% identical between v3 vs v3+FR and C4 vs C4+FR; France rows differ ~9-10%.
 - [02:45] Queued: India->US transfer (threshold behaviour for unseen country), then self-training (pseudo-label) proxy US+India-pseudo -> India DEV.
+- [03:16] SELF-TRAINING proxy (US labelled + 10% India non-DEV pseudo-labels, hi .98 / lo .02): India DEV 0.93095/0.93300/0.93441 at t .7/.8/.9 vs source-only 0.92751/0.92951/0.92749 -> +0.0035..+0.0069 at every threshold. India->US base also prefers t .8-.9 (0.94227 @.7 -> 0.94477 @.8 -> 0.94549 @.9).
+- [03:22] Pseudo 40% proxy: watchdog abort (15M rows too big). Kept 10% result.
+- [03:34] FR self-training (fr_pseudo.py fr1): labelled 6.19M (US+India TRAIN 10%) + 2.21M France pseudo rows (166k positive; hi .98/lo .02 from C3 on v4test, 20% of France records). 750 trees. France uncertain band 7.2% -> 4.3% (DEV-like); accept@.8 62.3%.
+- [03:40] Read 24 disagreements vs C4+FR@.8: self-trained right on ~8-9/12 of its extra accepts (same address, French legal noise) and ~7/12 of its extra rejects (different numbers / even different city). Judgement only.
+- [03:45] ASSEMBLED (all validator PASS, streamed-subset PASS, US/India rows 100% identical to source model):
+  output/v4_c4fr_t80 (C4 + FR-locale, France t=.8), output/v4_c4fr_frp_t80 (C4 US/India + self-trained France t=.8) <- RECOMMENDED,
+  output/v4_v3fr_frp_t80 (v3 US/India t=.8 + self-trained France t=.8).

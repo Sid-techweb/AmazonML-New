@@ -23,9 +23,11 @@ name, src = sys.argv[1], sys.argv[2]
 HI = float(sys.argv[3]) if len(sys.argv) > 3 else 0.98
 LO = float(sys.argv[4]) if len(sys.argv) > 4 else 0.02
 PFRAC = float(sys.argv[5]) if len(sys.argv) > 5 else 0.3
+SRC_C = sys.argv[6] if len(sys.argv) > 6 else "US"      # labelled source country
+TGT_C = sys.argv[7] if len(sys.argv) > 7 else "India"   # pseudo-labelled / evaluated target country
 FEATS = CONFIGS["C3_direct_x_more_data"]["feats"]
 SEED = 42
-run = Run(f"txp_{name}", {"src": src, "hi": HI, "lo": LO, "pfrac": PFRAC}, code_files=[__file__])
+run = Run(f"txp_{name}", {"src": src, "hi": HI, "lo": LO, "pfrac": PFRAC, "src_c": SRC_C, "tgt_c": TGT_C}, code_files=[__file__])
 
 
 def batches(prefix):
@@ -48,12 +50,12 @@ if not run.done("fit"):
     pick = (pl.col("fold") != "DEV") & ((pl.col("q_idx").hash(SEED + 3) % 1000) < int(PFRAC * 1000))
 
     def us_frames():
-        for d in batches("US"):  # labelled source rows, exactly as the source model
+        for d in batches(SRC_C):  # labelled source rows, exactly as the source model
             d = d.join(qf, on="q_idx", how="left").with_columns((pl.col("s1_idx") == pl.col("true_s1")).fill_null(False).alias("y"))
             yield d.filter(keep_us), d.filter(es)
 
     def in_frames():
-        for d in batches("India"):  # pseudo-labelled target rows; true labels are NOT read here
+        for d in batches(TGT_C):  # pseudo-labelled target rows; true labels are NOT read here
             d = d.join(qf.select("q_idx", "fold"), on="q_idx", how="left").filter(pick).join(top, on="q_idx", how="inner")
             yield d.filter((pl.col("top_p") >= HI) | (pl.col("top_p") <= LO)).with_columns(
                 ((pl.col("top_p") >= HI) & (pl.col("s1_idx") == pl.col("top_s1"))).alias("y"))
@@ -86,7 +88,7 @@ if not run.done("fit"):
 if not run.done("score"):
     m = lgb.Booster(model_file=str(run.path("model.txt")))
     parts = []
-    for d in batches("India"):
+    for d in batches(TGT_C):
         p = m.predict(d.select(FEATS).to_numpy(), num_threads=12).astype(np.float32)
         s = d.select("q_idx", "s1_idx").with_columns(pl.Series("p", p))
         parts.append(s.sort(["q_idx", "p"], descending=[False, True]).group_by("q_idx", maintain_order=True).agg(
@@ -95,11 +97,11 @@ if not run.done("score"):
     run.complete("score", files=["top1.parquet"])
 
 ctx = EvalCtx("DEV", "v2train")
-ctx.eval_s1 = ctx.eval_s1.filter(pl.col("country") == "India")
+ctx.eval_s1 = ctx.eval_s1.filter(pl.col("country") == TGT_C)
 ctx.truth = ctx.truth.join(ctx.eval_s1.select("s1_idx"), on="s1_idx", how="semi")
 t1 = pl.read_parquet(run.path("top1.parquet"))
 res = {t: ctx.score(t1.filter(pl.col("p1") >= t))["F"].mean() for t in (0.5, 0.6, 0.7, 0.8, 0.9)}
 run.path("eval.json").write_text(json.dumps(res, indent=1))
-note(f"PSEUDO {name} (src {src}, hi {HI}, lo {LO}): US+India-pseudo -> India DEV " + ", ".join(f"t{t}={v:.5f}" for t, v in res.items())
+note(f"PSEUDO {name} (src {src}, hi {HI}, lo {LO}): {SRC_C}+{TGT_C}-pseudo -> {TGT_C} DEV " + ", ".join(f"t{t}={v:.5f}" for t, v in res.items())
      + " | compare source-only best 0.92951")
 run.release()

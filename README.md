@@ -8,6 +8,7 @@ full task description is in [`PROBLEM_STATEMENT.md`](PROBLEM_STATEMENT.md).
 versus 0.97787 for the original recipe refit on the same data (Δ +0.0053, 95% CI [+0.0051, +0.0055]).
 **Latest user-reported leaderboard F0.5 for this v2/C4 submission: 0.970441.** The local result
 does not establish a 0.98 leaderboard score. Follow-up investigation: [`experiments/v3/PLAN.md`](experiments/v3/PLAN.md).
+**v4 (France-focused, not yet leaderboard-scored):** recommended upload `output/v4_c4fr_frp_t90/matching_results.tsv`. US/India are identical to the 0.970441 file; France gets French-locale normalisation plus self-training. See [`experiments/v4/REPORT.md`](experiments/v4/REPORT.md).
 **v3 candidate (not yet leaderboard-scored):** `output/v3_roles/matching_results.tsv` (local DEV 0.98423 vs C4 0.98322, reused CONF +0.00097; official validator PASS). See [`experiments/v3/REPORT.md`](experiments/v3/REPORT.md).
 Robust on a
 clustered wrong-branch stress suite, and it links 57.8% of test records (baseline 58.8%). Leaderboard history: original

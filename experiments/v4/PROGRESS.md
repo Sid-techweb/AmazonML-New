@@ -27,3 +27,8 @@ no sibling/population features; select only on DEV / proxy-transfer tests; never
 - [03:45] ASSEMBLED (all validator PASS, streamed-subset PASS, US/India rows 100% identical to source model):
   output/v4_c4fr_t80 (C4 + FR-locale, France t=.8), output/v4_c4fr_frp_t80 (C4 US/India + self-trained France t=.8) <- RECOMMENDED,
   output/v4_v3fr_frp_t80 (v3 US/India t=.8 + self-trained France t=.8).
+- [03:51] Self-training round 2 (US->India): 0.93108 best < round 1 0.93441 -> REJECTED (confirmation bias). One round only.
+- [04:08] Self-training India->US: 0.94107/0.94313/0.94525 at t .7/.8/.9 vs base 0.94227/0.94477/0.94549 -> neutral-to-slightly-negative in this direction.
+  Fair comparison (one common threshold per method, averaged over both directions): base best avg 0.93714 (t .8); self-trained best avg 0.93983 (t .9) -> +0.0027,
+  and self-trained@.9 is within 0.0002 of base's best in the unfavourable direction. => France self-trained variant uses t=0.9.
+- [04:25] Final: recommended output/v4_c4fr_frp_t90 (C4 US/India identical to LB 0.970441 file; France FR-locale + self-trained, t .9); conservative alt output/v4_c4fr_t80. REPORT.md written.

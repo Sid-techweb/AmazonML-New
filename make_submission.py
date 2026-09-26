@@ -23,8 +23,9 @@ def main(team: str):
         ROOT / "business_entity_resolution" / "README.md": "code/business_entity_resolution/README.md",
         ROOT / "business_entity_resolution" / "requirements.txt": "code/business_entity_resolution/requirements.txt",
     }
-    for py in sorted((ROOT / "business_entity_resolution" / "src").glob("*.py")):
-        files[py] = f"code/business_entity_resolution/src/{py.name}"
+    src = ROOT / "business_entity_resolution" / "src"
+    for py in sorted(src.rglob("*.py")):  # includes src/v2/
+        files[py] = f"code/business_entity_resolution/src/{py.relative_to(src).as_posix()}"
     missing = [str(p) for p in files if not p.exists()]
     if missing:
         sys.exit(f"missing files: {missing}")

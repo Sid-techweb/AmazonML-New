@@ -29,7 +29,7 @@ def best_rows(split):
     fdir, xdir = cache_path(f"{split}_feats"), cache_path(f"{split}_featx")
     base_cols = ["q_idx", "s1_idx"] + [c for c in FEATS1 if c not in T1.XCOLS]
     for f in sorted(fdir.glob("*.parquet")):
-        n, lo, hi = pl.scan_parquet(f).select(pl.len(), pl.col("q_idx").min(), pl.col("q_idx").max()).collect().row(0)
+        n, lo, hi = pl.scan_parquet(f).select(pl.len().alias("n"), pl.col("q_idx").min().alias("lo"), pl.col("q_idx").max().alias("hi")).collect().row(0)
         k = max(1, -(-n // 1_500_000))
         edges = [lo + (hi + 1 - lo) * i // k for i in range(k + 1)]
         for a, b in zip(edges[:-1], edges[1:]):

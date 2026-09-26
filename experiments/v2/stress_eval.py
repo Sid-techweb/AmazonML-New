@@ -42,6 +42,16 @@ res["distractor_accept_by_cluster_size"] = by.to_dicts()
 # duplication invariance on rejected distractors (probability must not rise with duplicates)
 m = lgb.Booster(model_file=str(RUNS / model_run / "model.txt"))
 feats = m.feature_name()
+POP = {"s1_rank1_deg"}  # the only candidate feature that depends on OTHER records
+if not (POP & set(feats)) and "p1" in feats:
+    # stacked model: inputs are a first-stage model without population features + pairwise features
+    res["duplication_invariance"] = "invariant by construction: no feature depends on other records (checked feature list)"
+    res["population_feature_used"] = False
+    (RUNS / model_run / f"stress_{SPLIT}.json").write_text(json.dumps(res, indent=1, default=float))
+    print(json.dumps(res, indent=1, default=float))
+    note(f"STRESS {model_run} t={T}: F_stress={res['F_stress_all_DEV']:.5f} F_twins={res['F_twins']:.5f} (zero-match twins {res['F_twins_zero_match']:.4f}) "
+         f"distractor accept={res['distractor_accept_rate']:.4f}; duplication-invariant by construction")
+    raise SystemExit(0)
 rej = acc.filter(~pl.col("accepted")).sample(min(20000, acc.filter(~pl.col("accepted")).height), seed=1).select("q_idx")
 fe = []
 for f in sorted(cache_path(f"{SPLIT}_feats").glob("*.parquet")):

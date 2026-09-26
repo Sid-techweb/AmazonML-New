@@ -4,9 +4,11 @@ Given business records from three sources, find every Source 2 / Source 3 record
 same real-world business as each Source 1 entity. Scoring is macro F0.5 per Source 1 entity. The
 full task description is in [`PROBLEM_STATEMENT.md`](PROBLEM_STATEMENT.md).
 
-**Status:** complete pipeline, submission files generated and validated.
-**Validation macro F0.5: 0.978** (precision 0.989, recall 0.955), measured end-to-end on held-out
-Source 1 entities against all 10.3M training S2/S3 records.
+**Status (v2, current submission):** direct-evidence matcher. Sealed confirmation fold macro F0.5 **0.98321**
+versus 0.97787 for the original recipe refit on the same data (Δ +0.0053, 95% CI [+0.0051, +0.0055]). Robust on a
+clustered wrong-branch stress suite, and it links 57.8% of test records (baseline 58.8%). Leaderboard history: original
+baseline ~0.97x; the sibling-feature run (E10) scored **0.933** and was withdrawn. Full report:
+[`experiments/v2/REPORT.md`](experiments/v2/REPORT.md); run log: [`experiments/v2/PROGRESS.md`](experiments/v2/PROGRESS.md).
 
 ---
 

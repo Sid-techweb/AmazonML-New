@@ -54,3 +54,28 @@ If any gate fails the baseline is kept.
 - [2026-09-26 14:26] featx v2test: 53 files done
 - [2026-09-26 14:27] featx v2test: 53 files done
 - [2026-09-26 14:27] RECOVERY TEST passed: featx v2test killed after 4/53 files, resumed from file 5; pre-kill and post-resume files byte-identical to clean recomputation (sha d0cba539..., 886e5cf4...)
+- [2026-09-26 15:22] C3_direct_x_more_data on v2train: fit+score complete (1317 trees)
+- [2026-09-26 15:22] model_C3_direct_x_more_data DEV/v2train: best F=0.98201 at t=0.7 (India 0.98100, US 0.98268, singletons 0.97271, accept 0.7149)
+- [2026-09-26 15:33] C4 stack on C3_direct_x_more_data: scored v2train (10,320,219 records)
+- [2026-09-26 15:33] model_C4_stack_on_C3_direct_x_more_data DEV/v2train: best F=0.98322 at t=0.7 (India 0.98243, US 0.98375, singletons 0.97523, accept 0.7162)
+- [2026-09-26 16:11] C3_direct_x_more_data on v2stress: fit+score complete (1317 trees)
+- [2026-09-26 16:16] C4 stack on C3_direct_x_more_data: scored v2stress (10,320,219 records)
+- [2026-09-26 16:17] STRESS model_C3_direct_x_more_data t=0.7: F_stress=0.98206 F_twins=0.97605 (zero-match twins 0.9690) distractor accept=0.0179; dup k=8 flips=0/20000 mean dp=+0.0000
+- [2026-09-26 16:17] STRESS model_C4_stack_on_C3_direct_x_more_data t=0.7: F_stress=0.98324 F_twins=0.97744 (zero-match twins 0.9724) distractor accept=0.0185; duplication-invariant by construction
+- [2026-09-26 16:17] PREVALENCE model_B0_baseline_refit (cluster prevalence x1/x2/x4/x8 - approximate for B0): x1: 0.97782, x2: 0.97756, x4: 0.97724, x8: 0.97693
+- [2026-09-26 16:17] PREVALENCE model_C3_direct_x_more_data (cluster prevalence x1/x2/x4/x8 - exact): x1: 0.98206, x2: 0.98180, x4: 0.98148, x8: 0.98118
+- [2026-09-26 16:17] PREVALENCE model_C4_stack_on_C3_direct_x_more_data (cluster prevalence x1/x2/x4/x8 - exact): x1: 0.98324, x2: 0.98298, x4: 0.98266, x8: 0.98235
+- [2026-09-26 16:18] SELECTION FROZEN (before CONF): C4_stack_on_C3 at t=0.70 chosen on DEV (0.98322) + stress (0.98324, twins 0.97744, zero-twins 0.9724, invariant); threshold stable region 0.65-0.75 on DEV
+- [2026-09-26 16:37] B0_baseline_refit on v2test: fit+score complete (738 trees)
+- [2026-09-26 17:13] C3_direct_x_more_data on v2test: fit+score complete (1317 trees)
+- [2026-09-26 17:18] C4 stack on C3_direct_x_more_data: scored v2test (9,969,589 records)
+- [2026-09-26 17:23] submission bundle C4_stack_on_C3_direct_x_more_data t=0.7: 5,758,097 matches (accept 0.5776), validator pending (separate step)
+- [2026-09-26 17:24] submission bundle B0_baseline_refit t=0.65: 5,887,635 matches (accept 0.5906), validator pending (separate step)
+- [2026-09-26 17:27] CONFIRMATION (one-shot): base 0.97787 vs chal 0.98321, delta +0.00533 CI95 [+0.00514, +0.00554]
+- [2026-09-26 17:27] ALL GATES PASSED -> C4 promoted. CONF one-shot: B0 0.97787 vs C4 0.98321, delta +0.00533 CI95 [+0.00514,+0.00554]; zero-match CONF 0.9779 vs 0.9758 (within tolerance). Test accept 57.8% (baseline 58.8%). Validator PASS. output/ now = C4 bundle; baseline kept in cache/experiments/BASELINE_BEST
+- [2026-09-26 17:29] qf.parquet built: 10,320,219 records; truth pairs 7,638,365
+- [2026-09-26 17:29] featx v2train: 43 files done
+- [2026-09-26 17:29] featx v2test: 53 files done
+- [2026-09-26 17:29] C3_direct_x_more_data on v2train: fit+score complete (1317 trees)
+- [2026-09-26 17:29] C3_direct_x_more_data on v2test: fit+score complete (1317 trees)
+- [2026-09-26 17:30] submission bundle C4_stack_on_C3_direct_x_more_data t=0.7: 5,758,097 matches (accept 0.5776), validator pending (separate step)

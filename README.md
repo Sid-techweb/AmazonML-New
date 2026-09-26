@@ -5,7 +5,10 @@ same real-world business as each Source 1 entity. Scoring is macro F0.5 per Sour
 full task description is in [`PROBLEM_STATEMENT.md`](PROBLEM_STATEMENT.md).
 
 **Status (v2, current submission):** direct-evidence matcher. Sealed confirmation fold macro F0.5 **0.98321**
-versus 0.97787 for the original recipe refit on the same data (Δ +0.0053, 95% CI [+0.0051, +0.0055]). Robust on a
+versus 0.97787 for the original recipe refit on the same data (Δ +0.0053, 95% CI [+0.0051, +0.0055]).
+**Latest user-reported leaderboard F0.5 for this v2/C4 submission: 0.970441.** The local result
+does not establish a 0.98 leaderboard score. Follow-up investigation: [`experiments/v3/PLAN.md`](experiments/v3/PLAN.md).
+Robust on a
 clustered wrong-branch stress suite, and it links 57.8% of test records (baseline 58.8%). Leaderboard history: original
 baseline ~0.97x; the sibling-feature run (E10) scored **0.933** and was withdrawn. Full report:
 [`experiments/v2/REPORT.md`](experiments/v2/REPORT.md); run log: [`experiments/v2/PROGRESS.md`](experiments/v2/PROGRESS.md).

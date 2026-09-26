@@ -30,12 +30,8 @@ res = {"model": model_run, "t": T, "F_stress_all_DEV": d["F"].mean(), "F_twins":
        "F_clean_same_entities": ctx_clean.score(load_top3(model_run, "v2train").filter(pl.col("p1") >= T))
        .join(d.select("s1_idx"), on="s1_idx", how="semi")["F"].mean()}
 # distractor records from removed X: how many are accepted (into anything)?
-lab_x = (pl.read_parquet(cache_path("train_ground_truth.parquet")).filter(pl.col("matched_entity_ids") != "")
-         .with_columns(pl.col("matched_entity_ids").str.split(",")).explode("matched_entity_ids"))
-sp = pl.read_parquet(RUNS / "v2_data" / "split_s1.parquet")
-qids = pl.concat([pl.read_parquet(cache_path(f"train_{s}.parquet"), columns=["entity_id"]) for s in ("source2", "source3")]).with_row_index("q_idx")
-xrec = (lab_x.join(sp.select("s1_idx", "entity_id"), left_on="source1_entity_id", right_on="entity_id").join(drop, on="s1_idx", how="semi")
-        .join(qids, left_on="matched_entity_ids", right_on="entity_id").select("q_idx", pl.col("s1_idx").alias("x_s1")))
+xrec = (pl.read_parquet(RUNS / "v2_data" / "truth_pairs.parquet").join(drop.rename({"s1_idx": "true_s1"}), on="true_s1", how="semi")
+        .select("q_idx", pl.col("true_s1").alias("x_s1")))
 xrec = xrec.with_columns(pl.len().over("x_s1").alias("cluster_size"))
 acc = xrec.join(top.select("q_idx", "p1"), on="q_idx").with_columns((pl.col("p1") >= T).alias("accepted"))
 res["distractor_records"] = acc.height

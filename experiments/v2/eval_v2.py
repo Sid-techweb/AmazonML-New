@@ -15,14 +15,9 @@ GRID = [round(x, 3) for x in np.arange(0.40, 0.951, 0.05)]
 class EvalCtx:
     def __init__(self, fold="DEV", split="v2train", drop_s1=None):
         sp = pl.read_parquet(RUNS / "v2_data" / "split_s1.parquet")
-        gt = (pl.read_parquet(cache_path("train_ground_truth.parquet")).filter(pl.col("matched_entity_ids") != "")
-              .with_columns(pl.col("matched_entity_ids").str.split(",")).explode("matched_entity_ids"))
-        q = pl.concat([pl.read_parquet(cache_path(f"train_{s}.parquet"), columns=["entity_id"]).with_columns(pl.lit(s == "source3").alias("is_s3"))
-                       for s in ("source2", "source3")]).with_row_index("q_idx")
-        truth = (gt.join(sp.select("s1_idx", "entity_id"), left_on="source1_entity_id", right_on="entity_id")
-                 .join(q.select("q_idx", "entity_id"), left_on="matched_entity_ids", right_on="entity_id").select("s1_idx", "q_idx"))
-        self.q_flags = q.select("q_idx", "is_s3")
-        del q, gt
+        truth = pl.read_parquet(RUNS / "v2_data" / "truth_pairs.parquet").select(pl.col("true_s1").alias("s1_idx"), "q_idx")
+        n_s2 = pl.scan_parquet(cache_path("train_source2.parquet")).select(pl.len()).collect().item()
+        self.n_s2 = n_s2  # records with q_idx >= n_s2 are Source 3
         ev = sp.filter(pl.col("fold") == fold).select("s1_idx", "country")
         if drop_s1 is not None:  # stress suites: removed S1s are no longer evaluated; their records become distractors
             ev = ev.join(drop_s1, on="s1_idx", how="anti")
@@ -56,8 +51,9 @@ def load_top3(model_run, split):
 
 def ceiling(ctx: EvalCtx, split="v2train"):
     """exact candidate-restricted oracle: perfect decisions on retrieved candidates."""
-    c = pl.scan_parquet(str(cache_path(f"{split}_cands") / "*.parquet")).select("q_idx", "s1_idx")
-    hit = ctx.truth.lazy().join(c, on=["q_idx", "s1_idx"], how="semi").collect()
+    hits = [ctx.truth.join(pl.read_parquet(f, columns=["q_idx", "s1_idx"], memory_map=False), on=["q_idx", "s1_idx"], how="semi")
+            for f in sorted(cache_path(f"{split}_cands").glob("*.parquet"))]  # per file: bounded memory
+    hit = pl.concat(hits).unique()
     return per_entity(hit, ctx.truth, ctx.eval_s1)["F"].mean()
 
 

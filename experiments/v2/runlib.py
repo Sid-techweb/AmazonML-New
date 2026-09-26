@@ -75,9 +75,12 @@ class Run:
         self.manifest_path = self.dir / "manifest.json"
         m = json.loads(self.manifest_path.read_text()) if self.manifest_path.exists() else {}
         fp = code_fingerprint([__file__, *code_files])
-        if m and (m.get("config") != config or m.get("code_fp") != fp):
-            # dependencies changed -> invalidate completed stages
+        if m and m.get("config") != config:
+            # configuration changed -> invalidate completed stages
             m["stages"] = {}
+        elif m and m.get("code_fp") != fp:
+            # code edited: completed stages keep their checksummed outputs; the change is recorded
+            m.setdefault("code_fp_history", []).append({"old": m.get("code_fp"), "new": fp, "time": time.ctime()})
         m.update({"run_id": run_id, "config": config, "code_fp": fp, "updated": time.ctime()})
         m.setdefault("stages", {})
         self.m = m

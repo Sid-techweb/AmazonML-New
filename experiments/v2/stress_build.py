@@ -14,17 +14,20 @@ from runlib import RUNS, Run, cache_path, mem, note
 
 share = float(sys.argv[1]) if len(sys.argv) > 1 else 1.0
 SPLIT = "v2stress" if share == 1.0 else f"v2stress{int(share*100)}"
-run = Run(f"stress_{SPLIT}", {"share": share, "rule": "DEV S1 with same (country, name_core key) twin, different addr"}, code_files=[__file__])
+run = Run(f"stress_{SPLIT}", {"share": share, "rule": "one DEV X per same-name DEV group (>=2 addresses); others are twins Y"}, code_files=[__file__])
 sp = pl.read_parquet(RUNS / "v2_data" / "split_s1.parquet")
 s1 = pl.read_parquet(cache_path("v2train_source1_norm.parquet"), columns=["country", "name_core", "addr_norm"]).with_row_index("s1_idx")
 s1 = s1.join(sp.select("s1_idx", "fold"), on="s1_idx").with_columns(pl.col("name_core").str.replace_all(" ", "").alias("key"))
-grp = s1.group_by("country", "key").agg(pl.len().alias("n"), pl.col("addr_norm").n_unique().alias("n_addr"))
-elig = (s1.join(grp, on=["country", "key"]).filter((pl.col("fold") == "DEV") & (pl.col("n") >= 2) & (pl.col("n_addr") >= 2) & (pl.col("key") != "")))
+# twin groups: >=2 DEV members sharing (country, core-name key) at >=2 distinct addresses
+dev = s1.filter((pl.col("fold") == "DEV") & (pl.col("key") != ""))
+g = dev.group_by("country", "key").agg(pl.len().alias("n_dev"), pl.col("addr_norm").n_unique().alias("n_addr"))
+g = g.filter((pl.col("n_dev") >= 2) & (pl.col("n_addr") >= 2))
 if share < 1.0:
-    elig = elig.filter((pl.col("s1_idx").hash(99) % 1000) < int(share * 1000))
-drop = elig.select("s1_idx")
-twins = (s1.join(elig.select("country", "key").unique(), on=["country", "key"]).join(drop, on="s1_idx", how="anti")
-         .select("s1_idx", "fold"))
+    g = g.filter((pl.struct("country", "key").hash(99) % 1000) < int(share * 1000))
+members = dev.join(g.select("country", "key"), on=["country", "key"]).with_columns(pl.col("s1_idx").hash(7).alias("hh"))
+members = members.with_columns(pl.col("hh").rank("ordinal").over("country", "key").alias("r"))
+drop = members.filter(pl.col("r") == 1).select("s1_idx")          # one X per group
+twins = members.filter(pl.col("r") > 1).select("s1_idx", "fold")  # remaining DEV members = evaluated twins Y
 run.write_parquet(drop, "dropped_X.parquet")
 run.write_parquet(twins, "twins_Y.parquet")
 note(f"stress {SPLIT}: removed {drop.height:,} DEV S1 with same-name twins; twins Y remaining: {twins.height:,} "
